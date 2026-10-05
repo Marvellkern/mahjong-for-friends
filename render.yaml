@@ -1,0 +1,15 @@
+# Render Blueprint: Render reads this file and sets up the service for you
+# (Render dashboard -> New -> Blueprint -> pick this repo).
+services:
+  - type: web
+    name: mahjong-for-friends
+    runtime: node
+    plan: free
+    # Vite and esbuild are devDependencies, so install them even though Render builds in production mode.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true # every push to the main branch redeploys
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
