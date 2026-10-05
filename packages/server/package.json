@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node20 --packages=external --outfile=dist/index.js"
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node20 --external:express --external:socket.io --outfile=dist/index.js"
   },
   "dependencies": {
     "@mahjong/engine": "*",

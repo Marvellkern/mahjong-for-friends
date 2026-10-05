@@ -20,7 +20,7 @@ export const S = {
   copyLink: 'Copy link',
   copied: 'Copied!',
   seatEmpty: 'Empty seat',
-  seatBotWillFill: 'A bot will sit here',
+  emptySeatsNote: 'Empty seats will be filled with bots when you start.',
   addBot: 'Add bot',
   removeBot: 'Remove bot',
   startGame: 'Start game',
