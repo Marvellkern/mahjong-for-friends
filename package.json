@@ -1,0 +1,33 @@
+{
+  "name": "mahjong-for-friends",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Casual 4-player mahjong for friends: four sets + one pair wins, no minimum score.",
+  "workspaces": [
+    "packages/engine",
+    "packages/server",
+    "packages/client"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p packages/engine --noEmit && tsc -p packages/server --noEmit && tsc -p packages/client --noEmit",
+    "lint": "eslint .",
+    "dev": "npm run dev -w @mahjong/client",
+    "dev:server": "npm run dev -w @mahjong/server",
+    "build": "npm run build -w @mahjong/client && npm run build -w @mahjong/server",
+    "start": "node packages/server/dist/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^5.0.3"
+  }
+}
