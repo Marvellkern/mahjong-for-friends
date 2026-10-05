@@ -8,10 +8,11 @@
 import { kindName, kindOf, rankOf, suitOf, type Kind, type Tile as TileId } from '@mahjong/engine';
 import type { ButtonHTMLAttributes } from 'react';
 
-export type TileSize = 'hand' | 'small' | 'tiny';
+export type TileSize = 'hand' | 'river' | 'small' | 'tiny';
 
 const SIZE_STYLE: Record<TileSize, React.CSSProperties> = {
   hand: { width: 'var(--hand-w)', height: 'var(--hand-h)' },
+  river: { width: 'var(--rw)', height: 'var(--rh)' },
   small: { width: 'var(--small-w)', height: 'var(--small-h)' },
   tiny: { width: 'var(--tiny-w)', height: 'var(--tiny-h)' },
 };
@@ -151,28 +152,33 @@ export function Tile({
 }: TileProps) {
   const kind = kindProp ?? (tile !== undefined ? kindOf(tile) : 0);
   const label = faceDown ? 'Hidden tile' : kindName(kind);
-  const edge = size === 'hand' ? 3 : size === 'small' ? 2 : 1.5;
+  const edge = size === 'hand' ? 4 : size === 'tiny' ? 1.5 : 2.5;
   const css: React.CSSProperties = {
     ...SIZE_STYLE[size],
     boxShadow: [
-      `0 ${edge}px 0 ${faceDown ? '#1e6b4f' : 'var(--color-tile-edge)'}`,
+      // Face-up tiles sit on an ivory body; face-down ones show their green back over the same ivory body.
+      `0 ${edge}px 0 ${faceDown ? '#d9cfb3' : 'var(--color-tile-edge)'}`,
+      'inset 0 -1px 0 rgb(0 0 0 / .06)',
       highlight ? '0 0 0 2px var(--color-gold), 0 0 10px 1px rgb(224 179 58 / .7)' : '',
-      '0 1px 4px rgb(0 0 0 / .35)',
+      `0 ${edge + 1}px 5px rgb(0 0 0 / .35)`,
     ]
       .filter(Boolean)
       .join(','),
     transform: selected ? 'translateY(-8px)' : undefined,
+    background: faceDown
+      ? 'linear-gradient(160deg, #3aa57e 0%, #2f8f6b 55%, #267a5b 100%)'
+      : 'linear-gradient(180deg, #fdfaf1 0%, #f5f0e1 55%, #ece4cd 100%)',
     ...style,
   };
   const cls = [
     'relative inline-block shrink-0 rounded-[12%/9%] tile-lift select-none',
-    faceDown ? 'bg-tile-back' : 'bg-tile',
     animate ? 'anim-discard' : '',
     className,
   ].join(' ');
   const svg = faceDown ? (
     <svg viewBox="0 0 60 84" className="absolute inset-0 h-full w-full" aria-hidden>
-      <rect x="6" y="6" width="48" height="72" rx="6" fill="none" stroke="rgb(255 255 255 / .18)" strokeWidth="3" />
+      <rect x="7" y="7" width="46" height="70" rx="7" fill="none" stroke="rgb(255 255 255 / .22)" strokeWidth="2.5" />
+      <circle cx="30" cy="42" r="9" fill="none" stroke="rgb(255 255 255 / .18)" strokeWidth="2.5" />
     </svg>
   ) : (
     <svg viewBox="0 0 60 84" className="absolute inset-0 h-full w-full" aria-hidden>

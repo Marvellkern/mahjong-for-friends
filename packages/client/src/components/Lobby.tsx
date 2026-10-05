@@ -5,6 +5,8 @@
 import { useState } from 'react';
 import { S } from '../strings';
 import type { RemoteRoom } from '../state/useRemoteGame';
+import { SEAT_COLORS } from '../theme';
+import { Avatar } from './Table';
 import { Tile } from './Tile';
 
 export function loadName(): string {
@@ -50,17 +52,29 @@ export function Home({ initialCode = '', notice, onPlayBots, onCreate, onJoin }:
   };
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-5 px-4 py-8">
+    <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-6 px-4 py-8">
       <div className="text-center">
-        <div className="mb-3 flex justify-center gap-1" aria-hidden>
-          {[16, 52, 96, 108, 128, 132].map((t) => (
-            <Tile key={t} tile={t} size="hand" static />
-          ))}
+        {/* A little fanned-out hand as the logo. */}
+        <div className="mb-5 flex justify-center" aria-hidden>
+          {HERO_TILES.map((t, i) => {
+            const mid = (HERO_TILES.length - 1) / 2;
+            return (
+              <Tile
+                key={t}
+                tile={t}
+                size="hand"
+                static
+                className="-mx-px"
+                style={{ transform: `rotate(${(i - mid) * 6}deg) translateY(${Math.abs(i - mid) * 3}px)`, transformOrigin: '50% 120%' }}
+              />
+            );
+          })}
         </div>
-        <h1 className="text-3xl font-extrabold">{S.gameName}</h1>
-        <p className="mt-1 text-white/80">{S.tagline}</p>
+        <h1 className="text-[2rem] font-extrabold leading-tight tracking-tight">{S.gameName}</h1>
+        <p className="mt-1.5 text-white/80">{S.tagline}</p>
       </div>
 
+      <div className="card flex flex-col gap-4 rounded-3xl p-5">
       {notice && (
         <p role="alert" className="rounded-xl bg-man/90 px-3 py-2 text-center text-sm font-semibold">
           {notice}
@@ -119,9 +133,13 @@ export function Home({ initialCode = '', notice, onPlayBots, onCreate, onJoin }:
           </form>
         </>
       )}
+      </div>
     </div>
   );
 }
+
+/** 5 Characters, 5 Dots, 7 Bamboo, East, Green, Red: one of each family for the home-screen logo. */
+const HERO_TILES = [16, 52, 96, 108, 128, 132];
 
 /** The waiting room before a game starts. */
 export function LobbyRoom({ room }: { room: RemoteRoom }) {
@@ -154,13 +172,10 @@ export function LobbyRoom({ room }: { room: RemoteRoom }) {
         {room.connection !== 'connected' && <span className="rounded bg-man px-2 py-0.5 text-xs font-semibold">{S.reconnecting}</span>}
       </div>
 
-      <div className="text-center">
-        <p className="text-sm text-white/70">{S.roomCode}</p>
-        <h1 className="font-mono text-5xl font-extrabold tracking-[0.25em] text-gold">{snap.code}</h1>
-      </div>
-
-      <div className="rounded-xl bg-black/25 p-3">
-        <p className="mb-2 text-sm text-white/85">{S.shareLink}</p>
+      <div className="card rounded-3xl p-4 text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">{S.roomCode}</p>
+        <h1 className="mt-1 font-mono text-5xl font-extrabold tracking-[0.25em] text-gold drop-shadow">{snap.code}</h1>
+        <p className="mb-2 mt-4 text-left text-sm text-white/85">{S.shareLink}</p>
         <div className="flex gap-2">
           <input readOnly value={link} aria-label="Room link" className="min-w-0 flex-1 rounded-lg bg-white/10 px-2 font-mono text-xs text-white" onFocus={(e) => e.target.select()} />
           <button className="min-h-10 rounded-lg bg-gold px-3 text-sm font-extrabold text-[#1d1d1d]" onClick={copy}>
@@ -171,13 +186,18 @@ export function LobbyRoom({ room }: { room: RemoteRoom }) {
 
       <ul className="space-y-2">
         {snap.seats.map((s, i) => (
-          <li key={i} className="flex min-h-12 items-center gap-2 rounded-xl bg-black/20 px-3 ring-1 ring-white/10">
-            <span className="w-5 text-sm text-white/65">{i + 1}</span>
+          <li key={i} className={`flex min-h-13 items-center gap-2.5 rounded-2xl px-3 ${s.empty ? 'border border-dashed border-white/20' : 'card'}`}>
             {s.empty ? (
-              <span className="flex-1 text-white/70">{S.seatEmpty}</span>
+              <>
+                <span aria-hidden className="grid h-6 w-6 place-items-center rounded-full border border-dashed border-white/30 text-xs text-white/60">
+                  {i + 1}
+                </span>
+                <span className="flex-1 text-white/70">{S.seatEmpty}</span>
+              </>
             ) : (
               <span className="flex flex-1 items-center gap-1.5 font-semibold">
-                {s.name}
+                <Avatar name={s.name} color={SEAT_COLORS[i]} isBot={s.isBot} faded={!s.isBot && !s.connected} />
+                <span className="ml-1">{s.name}</span>
                 {i === snap.mySeat && <span className="rounded bg-white/15 px-1.5 text-[10px] uppercase">{S.youTag}</span>}
                 {i === snap.hostSeat && <span className="rounded bg-gold px-1.5 text-[10px] uppercase text-black">{S.hostTag}</span>}
                 {s.isBot && <span className="text-xs font-normal text-white/60">{S.bot}</span>}

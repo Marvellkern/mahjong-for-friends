@@ -45,6 +45,8 @@ export const S = {
   round: (n: number) => `Round ${n}`,
   tilesLeft: (n: number) => `${n} tiles left`,
   wins: (n: number) => (n === 1 ? '1 win' : `${n} wins`),
+  thinking: 'thinking…',
+  playing: 'their turn',
 
   // Status line: whose turn and what you can do right now
   statusYourTurn: 'Your turn: tap a tile, then tap it again to discard.',
