@@ -29,6 +29,10 @@ export function Table({ ctrl }: { ctrl: GameController }) {
   // Forget the selection as soon as it isn't a legal discard any more.
   const selected = picked !== null && discardable.has(picked) ? picked : null;
 
+  // My own hand arrangement (drag to sort). Local only; every new round starts auto-sorted.
+  const [arranged, setArranged] = useState<{ round: number; order: TileId[] } | null>(null);
+  const handOrder = arranged?.round === v.round ? arranged.order : null;
+
   const act: GameController['act'] = (a) => {
     setPicked(null);
     ctrl.act(a);
@@ -73,14 +77,25 @@ export function Table({ ctrl }: { ctrl: GameController }) {
             </span>
             <Melds melds={v.seats[me].melds} size="small" />
           </div>
-          {ctrl.showWaits && v.waits && v.waits.length > 0 && (
-            <div className="flex items-center gap-1 text-xs text-white/85">
-              {S.waitingFor}
-              {v.waits.map((k) => (
-                <Tile key={k} kind={k} size="tiny" static />
-              ))}
-            </div>
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            {ctrl.showWaits && v.waits && v.waits.length > 0 && (
+              <div className="flex items-center gap-1 text-xs text-white/85">
+                {S.waitingFor}
+                {v.waits.map((k) => (
+                  <Tile key={k} kind={k} size="tiny" static />
+                ))}
+              </div>
+            )}
+            {handOrder && (
+              <button
+                className="min-h-8 rounded-lg bg-black/30 px-2.5 text-xs font-bold ring-1 ring-white/25 active:translate-y-px"
+                onClick={() => setArranged(null)}
+                title={S.sortHandHint}
+              >
+                {S.sortHand}
+              </button>
+            )}
+          </div>
         </div>
         <p
           aria-live="polite"
@@ -92,6 +107,8 @@ export function Table({ ctrl }: { ctrl: GameController }) {
           <Hand
             tiles={v.myHand}
             drawn={v.myDrawnTile}
+            order={handOrder}
+            onOrderChange={(order) => setArranged({ round: v.round, order })}
             discardable={discardable}
             selected={selected}
             onSelect={setPicked}

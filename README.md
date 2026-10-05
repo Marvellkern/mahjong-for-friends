@@ -33,7 +33,9 @@ Other scripts: `npm run lint`, `npm run typecheck`.
 - Win with **4 sets + 1 pair**, from a discard or your own draw. That's it: no points, no minimum.
 - Settings (⚙) has a **"Show tiles I'm waiting for"** hint, sounds, and Leave.
 
-Keyboard: Tab to the hand, ←/→ to move, Enter to select and Enter again to discard.
+- **Drag tiles left or right to arrange your hand** however you like (only you see the order). **Sort** puts them back in order; each new round starts sorted.
+
+Keyboard: Tab to the hand, ←/→ to move, Enter to select and Enter again to discard, Shift+←/→ to move a tile.
 
 ## Rules & defaults
 
