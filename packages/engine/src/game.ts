@@ -36,6 +36,10 @@ export function createGame({ seed, rules = RULES }: CreateGameOptions): GameStat
   if (rules.useBonusTiles) {
     throw new Error('RULES.useBonusTiles = true is not implemented yet (stretch goal). Set it to false.');
   }
+  if (!rules.roundEndsWhenWallEmpty) {
+    // With no tiles left to draw there is no other sensible outcome; the flag exists so the choice is explicit.
+    throw new Error('RULES.roundEndsWhenWallEmpty = false has no defined behaviour. Keep it true.');
+  }
   return {
     rules,
     phase: 'LOBBY',

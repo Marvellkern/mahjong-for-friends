@@ -24,7 +24,7 @@ function saveName(name: string) {
 }
 
 export const inputCls =
-  'min-h-12 w-full rounded-xl bg-white/95 px-3 text-base font-semibold text-[#1d1d1d] placeholder:text-black/40 focus:outline-2 focus:outline-gold';
+  'min-h-12 w-full rounded-xl bg-white/95 px-3 text-base font-semibold text-[#1d1d1d] placeholder:text-black/55 focus:outline-2 focus:outline-gold';
 export const primaryBtn =
   'min-h-12 w-full rounded-xl bg-gold px-4 text-lg font-extrabold text-[#1d1d1d] shadow-[0_3px_0_rgb(0_0_0/.3)] active:translate-y-px disabled:opacity-40';
 export const secondaryBtn =
@@ -172,9 +172,9 @@ export function LobbyRoom({ room }: { room: RemoteRoom }) {
       <ul className="space-y-2">
         {snap.seats.map((s, i) => (
           <li key={i} className="flex min-h-12 items-center gap-2 rounded-xl bg-black/20 px-3 ring-1 ring-white/10">
-            <span className="w-5 text-sm text-white/50">{i + 1}</span>
+            <span className="w-5 text-sm text-white/65">{i + 1}</span>
             {s.empty ? (
-              <span className="flex-1 text-white/55">{S.seatEmpty}</span>
+              <span className="flex-1 text-white/70">{S.seatEmpty}</span>
             ) : (
               <span className="flex flex-1 items-center gap-1.5 font-semibold">
                 {s.name}
