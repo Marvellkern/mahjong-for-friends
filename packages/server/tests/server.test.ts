@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { AddressInfo } from 'node:net';
 import { io as connect, type Socket } from 'socket.io-client';
 import type { Action, GameEvent } from '@mahjong/engine';
+import { RULES } from '@mahjong/engine';
 import { createServer, sanitizeAction } from '../src/app';
+import { Room } from '../src/rooms';
 import type { RoomSnapshot } from '../src/views';
 
 // Fast timers so a whole round plays in a second or two.
@@ -100,19 +102,16 @@ describe('rooms over Socket.IO', () => {
     expect(Object.keys(end.roundResult!.hands!)).toHaveLength(4);
   });
 
-  it('illegal and malformed actions get an error and change nothing', async () => {
+  it('malformed actions and impossible moves get an error over the socket', async () => {
+    // Only moves that are illegal no matter whose turn it is: the fast bots keep playing meanwhile.
     const [a, b] = await Promise.all([player('tok-11111111'), player('tok-22222222')]);
     const { code } = await emit<{ code: string }>(a, 'create_room', { token: a.token, name: 'A' });
     await emit(b, 'join_room', { token: b.token, name: 'B', code });
     await emit(a, 'start_game');
     await until(() => !!a.snap?.view && !!b.snap?.view);
-    const notMyTurn = a.snap!.view!.currentTurn === 0 ? b : a;
-    const before = JSON.stringify(notMyTurn.snap!.view!.myHand);
-    const res = await emit<{ error?: string }>(notMyTurn, 'action', { type: 'discard', tileId: notMyTurn.snap!.view!.myHand[0] });
-    expect(res.error).toBeTruthy();
+    expect((await emit<{ error?: string }>(a, 'action', { type: 'discard', tileId: 999 })).error).toBeTruthy();
     expect((await emit<{ error?: string }>(a, 'action', { type: 'claim', claim: 'chow', chowKinds: 'nope' })).error).toBeTruthy();
     expect((await emit<{ error?: string }>(a, 'action', null)).error).toBeTruthy();
-    expect(JSON.stringify(notMyTurn.snap!.view!.myHand)).toBe(before);
   });
 
   it('reconnecting with the same token restores the same seat and hand', async () => {
@@ -164,6 +163,25 @@ describe('rooms over Socket.IO', () => {
     const late = await player('tok-late2222');
     expect(await emit(late, 'join_room', { token: late.token, name: 'Late', code })).toEqual({ error: 'That game has already started.' });
     expect((await emit<{ error?: string }>(late, 'join_room', { token: late.token, name: 'Late', code: 'ZZZZ' })).error).toMatch(/doesn't exist/);
+  });
+});
+
+describe('Room (no network, bots frozen)', () => {
+  it("an illegal move returns an error and leaves the game exactly as it was", () => {
+    // Bots never get to move here, so the turn can't change under us.
+    const frozen = { botTurnMs: 1e9, botClaimMs: 1e9, claimMinDelayMs: 1e9, claimWindowMs: 1e9, turnTimerMs: null };
+    const room = new Room('TEST', 'tok-host0000', () => {}, RULES, frozen);
+    room.join('tok-host0000', 'A');
+    room.join('tok-guest000', 'B');
+    expect(room.start('tok-host0000')).toBeNull();
+    const game = room.game!;
+    const notOnTurn = game.turn === 0 ? 'tok-guest000' : 'tok-host0000';
+    const seat = room.seatOf(notOnTurn);
+    const before = JSON.stringify(room.game);
+    expect(room.act(notOnTurn, { type: 'discard', tileId: game.players[seat].hand[0] })).toBe("It's not your turn.");
+    expect(room.act('tok-stranger', { type: 'pass' })).toBe("You're not seated in this room.");
+    expect(JSON.stringify(room.game)).toBe(before);
+    room.dispose();
   });
 });
 
