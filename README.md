@@ -3,6 +3,8 @@
 A casual 4-player mahjong for a small group of friends. **Four sets + one pair wins, with no minimum score.**
 Play solo against 3 bots in the browser, or create a room and share a link with friends (empty seats become bots).
 
+**Play it: https://mahjong-for-friends.onrender.com** (free hosting: if nobody has played for a while, the first load takes ~30-60 s to wake up).
+
 No accounts, no database, no tracking, no money.
 
 ## Quick start
