@@ -17,8 +17,8 @@
 }
 
 :root {
-  /* Hand tiles: 14 must fit in ONE row on a 360px phone: 16px page gutter, 13 x 1px gaps, 5px gap before the drawn tile. */
-  --hand-w: clamp(20px, calc((100vw - 16px - 13px - 5px) / 14), 46px);
+  /* Hand tiles: 14 must fit in ONE row on a 360px phone: 16px page gutter, 13 x 1px gaps, 10px gap before the drawn tile. */
+  --hand-w: clamp(20px, calc((100vw - 16px - 13px - 10px) / 14), 46px);
   --hand-h: max(36px, calc(var(--hand-w) * 1.4));
   --small-w: clamp(16px, 5.2vw, 30px);
   --small-h: calc(var(--small-w) * 1.4);

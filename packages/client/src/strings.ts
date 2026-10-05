@@ -68,6 +68,7 @@ export const S = {
   addedKong: 'Add to Kong',
   chooseChow: 'Which chow?',
   sortHand: 'Sort',
+  justDrawn: 'just drawn',
   sortHandHint: 'Put my tiles back in order',
   secondsLeft: (s: number) => `${s}s`,
 

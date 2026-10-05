@@ -10,7 +10,8 @@
  * Shift+Left/Right moves the focused tile.
  */
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
-import type { Tile as TileId } from '@mahjong/engine';
+import { kindName, kindOf, type Tile as TileId } from '@mahjong/engine';
+import { S } from '../strings';
 import { Tile } from './Tile';
 
 interface HandProps {
@@ -159,11 +160,13 @@ export function Hand({ tiles, drawn, order, onOrderChange, discardable, selected
     >
       {display.map((t, i) => {
         const isDragged = t === dragging;
-        // The drawn tile keeps its little gap while it is still apart (and not mid-drag).
+        // The drawn tile sits apart, with a gold bar under it, until it's discarded or dragged into the hand.
         const apart = !preview && t === loose && i === display.length - 1;
+        // Every tile gets the same wrapper so a tile is never remounted when it stops being "apart"
+        // (that would drop the pointer capture in the middle of a drag).
         return (
+          <span key={t} className={`relative inline-flex ${apart ? 'ml-[10px]' : ''}`}>
           <Tile
-            key={t}
             tile={t}
             size="hand"
             selected={selected === t}
@@ -172,7 +175,8 @@ export function Hand({ tiles, drawn, order, onOrderChange, discardable, selected
             onPointerMove={onPointerMove}
             onPointerUp={(e) => endPress(e, false)}
             onPointerCancel={(e) => endPress(e, true)}
-            className={apart ? 'ml-[5px]' : undefined}
+            // Only override the tile's own label for the drawn tile (passing undefined would erase it).
+            {...(apart ? { 'aria-label': `${kindName(kindOf(t))} (${S.justDrawn})`, title: S.justDrawn } : {})}
             aria-disabled={!discardable.has(t)}
             tabIndex={selected === t || (selected === null && i === 0) ? 0 : -1}
             style={{
@@ -186,6 +190,10 @@ export function Hand({ tiles, drawn, order, onOrderChange, discardable, selected
               else refs.current.delete(t);
             }}
           />
+          {apart && (
+            <span aria-hidden className="pointer-events-none absolute -bottom-2 left-1/2 h-1 w-3/5 -translate-x-1/2 rounded-full bg-gold shadow-[0_0_6px_rgb(224_179_58/.8)]" />
+          )}
+          </span>
         );
       })}
     </div>
