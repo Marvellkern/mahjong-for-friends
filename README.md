@@ -89,8 +89,14 @@ You may need to allow Node through your firewall.
 
 ## Deploying
 
-**Deploy target: not chosen yet (owner's call).** Any host that runs a long-lived Node process with websockets works.
-The app is a single service:
+**Deploy target: Render (free tier).** [`render.yaml`](render.yaml) describes the service, so setup is:
+
+1. Push this repo to GitHub (a private repo is fine).
+2. On [render.com](https://render.com), sign in with GitHub → **New** → **Blueprint** → pick the repo → **Apply**.
+3. Wait for the first build (a few minutes). Your game is at `https://mahjong-for-friends-XXXX.onrender.com`.
+4. Every push to `main` redeploys automatically.
+
+Any other host that runs a long-lived Node process with websockets works too. The app is a single service:
 
 - **Build command:** `npm install && npm run build`
 - **Start command:** `npm start`
