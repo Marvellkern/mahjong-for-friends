@@ -1,0 +1,116 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-felt: #1b4d3e;
+  --color-felt-edge: #123428;
+  --color-felt-light: #24614f;
+  --color-tile: #f5f0e1;
+  --color-tile-edge: #c9bfa3;
+  --color-tile-back: #2f8f6b;
+  --color-man: #c0392b;
+  --color-pin: #1f5fa8;
+  --color-sou: #2e7d32;
+  --color-wind: #222222;
+  --color-gold: #e0b33a;
+  --font-sans: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-cjk: 'Noto Serif TC', 'Noto Serif CJK TC', 'PingFang TC', 'Microsoft JhengHei', serif;
+}
+
+:root {
+  /* Hand tiles: 14 must fit in ONE row on a 360px phone: 16px page gutter, 13 x 1px gaps, 5px gap before the drawn tile. */
+  --hand-w: clamp(20px, calc((100vw - 16px - 13px - 5px) / 14), 52px);
+  --hand-h: max(36px, calc(var(--hand-w) * 1.4));
+  --small-w: clamp(16px, 5.2vw, 30px);
+  --small-h: calc(var(--small-w) * 1.4);
+  --tiny-w: clamp(11px, 3vw, 22px);
+  --tiny-h: calc(var(--tiny-w) * 1.4);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at center, var(--color-felt-light) 0%, var(--color-felt) 55%, var(--color-felt-edge) 100%)
+    fixed;
+  background-color: var(--color-felt);
+  color: #fff;
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* Animations (all short; disabled for prefers-reduced-motion below). */
+@keyframes discard-in {
+  from {
+    transform: translateY(-14px) scale(1.15);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes banner {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1.08);
+    opacity: 1;
+  }
+  75% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px var(--color-gold), 0 0 12px 2px rgb(224 179 58 / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--color-gold), 0 0 20px 4px rgb(224 179 58 / 0.7);
+  }
+}
+@keyframes countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+.anim-discard {
+  animation: discard-in 180ms ease-out;
+}
+.anim-banner {
+  animation: banner 800ms ease-out forwards;
+}
+.anim-glow {
+  animation: glow 1.6s ease-in-out infinite;
+}
+.tile-lift {
+  transition: transform 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-discard,
+  .anim-glow {
+    animation: none;
+  }
+  .anim-banner {
+    animation-duration: 1ms;
+    animation-delay: 700ms;
+  }
+  .tile-lift {
+    transition: none;
+  }
+}
