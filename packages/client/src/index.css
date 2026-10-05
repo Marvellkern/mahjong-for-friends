@@ -28,22 +28,38 @@
 
 /*
  * The board sizes its river (discard) tiles from the space it ACTUALLY has (container query
- * units of .board-area), so it always fits between the top bar and my rack, on a 360px phone
- * or a laptop.
- *   across: [4 river columns] [centre, 6 tiles wide] [4 river columns] = 14 tiles + ~50px of gaps/padding
- *   down:   [seat card] [3 river rows] [centre, 6 tiles tall] [3 river rows] = 12 tiles (x1.4 tall) + ~106px
- * Rivers can grow a 4th row late in a round; the area scrolls if that ever doesn't fit.
+ * units of .board-area), so it always fits between the top bar and my rack, on a phone or a laptop.
+ *
+ *   across: [side river columns] [centre, 6 tiles wide] [side river columns] + ~50px of gaps/padding
+ *   down:   [seat card] [3 river rows] [centre = side river height] [3 river rows] + ~106px
+ *
+ * Wide/landscape space: side rivers are columns of 6, up to 4 columns (6 + 2x4 = 14 tiles across).
+ * Tall/portrait space (phones): columns of 8, 3 columns (6 + 2x3 = 12 across), so tiles get bigger
+ * and the centre gets taller. 3 x 8 = 24 still holds every discard one player can make in a round.
+ * Top/bottom rivers can grow a 4th row late in a round; their rows absorb the board's spare height.
  */
 .board-area {
   container-type: size;
 }
 .board {
-  --rw: clamp(13px, min(calc((100cqw - 50px) / 14), calc((100cqh - 106px) / 16.8)), 38px);
+  --side-rows: 6;
+  --side-cols: 4;
+  --rw: clamp(
+    13px,
+    min(calc((100cqw - 50px) / (6 + 2 * var(--side-cols))), calc((100cqh - 106px) / (1.4 * (6 + var(--side-rows))))),
+    38px
+  );
   --rh: calc(var(--rw) * 1.4);
-  --rv4w: calc(var(--rw) * 4 + 3px);
+  --rv-side-w: calc(var(--rw) * var(--side-cols) + 3px);
   --rv6w: calc(var(--rw) * 6 + 5px);
   --rv3h: calc(var(--rh) * 3 + 2px);
-  --rv6h: calc(var(--rh) * 6 + 5px);
+  --rv-side-h: calc(var(--rh) * var(--side-rows) + 7px);
+}
+@container (max-aspect-ratio: 4 / 5) {
+  .board {
+    --side-rows: 8;
+    --side-cols: 3;
+  }
 }
 
 html,

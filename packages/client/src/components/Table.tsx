@@ -29,9 +29,12 @@ import { Tile } from './Tile';
 
 const BOARD_STYLE: CSSProperties = {
   // Wide enough for the river grid plus some room for the side seat cards, never wider than the screen.
-  width: 'min(100%, calc(var(--rv6w) + 2 * var(--rv4w) + 220px))',
-  gridTemplateColumns: 'minmax(var(--rv4w), 1fr) var(--rv6w) minmax(var(--rv4w), 1fr)',
-  gridTemplateRows: 'auto minmax(var(--rv3h), auto) var(--rv6h) minmax(var(--rv3h), auto)',
+  width: 'min(100%, calc(var(--rv6w) + 2 * var(--rv-side-w) + 220px))',
+  gridTemplateColumns: 'minmax(var(--rv-side-w), 1fr) var(--rv6w) minmax(var(--rv-side-w), 1fr)',
+  // The board stretches to the full height between the top bar and my rack. On phones (where width
+  // limits tile size) the spare height goes to the river rows above/below the centre, so the
+  // seat cards sit up top instead of leaving empty felt.
+  gridTemplateRows: 'auto minmax(var(--rv3h), 1fr) var(--rv-side-h) minmax(var(--rv3h), 1fr)',
   gridTemplateAreas: '"tchip tchip tchip" "lchip top rchip" "left center right" ". bottom ."',
 };
 
@@ -69,15 +72,15 @@ export function Table({ ctrl }: { ctrl: GameController }) {
       <TopBar ctrl={ctrl} />
 
       {/* The table */}
-      <main className="board-area grid min-h-0 flex-1 place-items-center overflow-y-auto py-1">
+      <main className="board-area flex min-h-0 flex-1 justify-center overflow-y-auto py-1">
         <div className="board table-surface grid gap-1.5 rounded-[28px] p-2 sm:gap-2 sm:p-4" style={BOARD_STYLE}>
           <div style={{ gridArea: 'tchip' }} className="flex justify-center">
             <SeatCard view={v} seat={seatAt.top} isTurn={turnSeat === seatAt.top} className="w-full max-w-[260px]" />
           </div>
-          <div style={{ gridArea: 'lchip' }} className="flex items-end justify-end">
+          <div style={{ gridArea: 'lchip' }} className="flex items-start justify-end">
             <SeatCard view={v} seat={seatAt.left} isTurn={turnSeat === seatAt.left} className="w-full max-w-[210px]" />
           </div>
-          <div style={{ gridArea: 'rchip' }} className="flex items-end justify-start">
+          <div style={{ gridArea: 'rchip' }} className="flex items-start justify-start">
             <SeatCard view={v} seat={seatAt.right} isTurn={turnSeat === seatAt.right} className="w-full max-w-[210px]" />
           </div>
 
@@ -345,8 +348,8 @@ function MyBadge({ view, isTurn }: { view: PlayerView; isTurn: boolean }) {
 
 /**
  * A discard river, sitting in front of its player and growing away from the centre:
- *   top    rows of 6, new rows stack upward      left   columns of 6, new columns grow leftward
- *   bottom rows of 6, new rows stack downward    right  columns of 6, new columns grow rightward
+ *   top    rows of 6, new rows stack upward      left   columns (6 tall, 8 on phones), new columns grow leftward
+ *   bottom rows of 6, new rows stack downward    right  columns (6 tall, 8 on phones), new columns grow rightward
  * The most recent discard on the table glows gold.
  */
 function River({ view, seat, side }: { view: PlayerView; seat: number; side: Side }) {
@@ -358,7 +361,7 @@ function River({ view, seat, side }: { view: PlayerView; seat: number; side: Sid
         gridArea: side,
         display: 'grid',
         gridAutoFlow: 'column',
-        gridTemplateRows: 'repeat(6, var(--rh))',
+        gridTemplateRows: 'repeat(var(--side-rows), var(--rh))',
         gridAutoColumns: 'var(--rw)',
         gap: 1,
         justifySelf: side === 'left' ? 'end' : 'start',
