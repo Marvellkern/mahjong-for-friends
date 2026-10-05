@@ -12,7 +12,7 @@
  * Drivers call planNextStep() after every state change, (re)arm ONE timer for step.at,
  * then call runStep() when it fires.
  */
-import { botAction } from './bots';
+import { botAction, chooseDiscard } from './bots';
 import { allClaimsIn, applyAction, legalActions, resolveClaims } from './game';
 import type { Action, GameEvent, GameState } from './types';
 import type { Rng } from './wall';
@@ -53,6 +53,25 @@ export function planNextStep(state: GameState, isBot: (seat: number) => boolean,
   return null;
 }
 
+/**
+ * What happens when a human's turn timer runs out. The rule: a timeout never costs you more
+ * than the smallest possible move.
+ *   1. Hand already complete -> declare Mahjong for them (never lose a win to looking away).
+ *   2. Just drew a tile      -> discard that tile, so the hand stays exactly as it was.
+ *   3. Just claimed (no draw) -> discard the tile the bot logic rates least useful.
+ * Kongs are never declared automatically: that's a real choice.
+ */
+export function timeoutAction(state: GameState, seat: number, rng: Rng): Action | null {
+  const legal = legalActions(state, seat);
+  const win = legal.find((a) => a.type === 'declare_win');
+  if (win) return win;
+  if (!legal.some((a) => a.type === 'discard')) return null;
+  if (state.drawn !== null && legal.some((a) => a.type === 'discard' && a.tileId === state.drawn)) {
+    return { type: 'discard', tileId: state.drawn };
+  }
+  return { type: 'discard', tileId: chooseDiscard(state.players[seat].hand, rng) };
+}
+
 /** Epoch ms when the claim window will close at the latest (for the UI countdown). */
 export const claimDeadline = (t: Timing) => t.stepSince + t.claimWindowMs;
 
@@ -61,16 +80,7 @@ export function runStep(state: GameState, step: AutoStep, rng: Rng): { state: Ga
   if (step.kind === 'resolve_claims') {
     return state.phase === 'CLAIM_WINDOW' ? resolveClaims(state) : null;
   }
-  let action: Action | null;
-  if (step.kind === 'bot') {
-    action = botAction(state, step.seat, rng);
-  } else {
-    // Turn timer ran out: discard the tile just drawn (or the last tile in hand).
-    const legal = legalActions(state, step.seat);
-    const discards = legal.filter((a) => a.type === 'discard');
-    const drawnDiscard = discards.find((a) => a.type === 'discard' && a.tileId === state.drawn);
-    action = drawnDiscard ?? discards[discards.length - 1] ?? null;
-  }
+  const action = step.kind === 'bot' ? botAction(state, step.seat, rng) : timeoutAction(state, step.seat, rng);
   if (!action) return null;
   const res = applyAction(state, step.seat, action);
   return 'error' in res ? null : res;

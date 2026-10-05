@@ -8,6 +8,8 @@
  *   leave_room
  *   add_bot {seat} / remove_bot {seat}   (host only, lobby only)
  *   start_game                           (host only)
+ *   set_turn_timer {ms: number|null}     (host only, lobby only)
+ *   come_back                            "I'm back": stop the bot playing my seat
  *   action <Action>                      -> {} | { error }
  *   set_hint <boolean>
  * Server -> client:
@@ -139,6 +141,17 @@ export function createServer(opts: ServerOptions = {}): { http: HttpServer; io: 
     socket.on('add_bot', (p: unknown, cb: unknown) => hostCommand((room, t) => room.addBot(t, seatArg(p)))(p, cb));
     socket.on('remove_bot', (p: unknown, cb: unknown) => hostCommand((room, t) => room.removeBot(t, seatArg(p)))(p, cb));
     socket.on('start_game', (p: unknown, cb: unknown) => hostCommand((room, t) => room.start(t))(p, cb));
+    socket.on('set_turn_timer', (p: unknown, cb: unknown) => {
+      const ms = (p as { ms?: unknown })?.ms;
+      hostCommand((room, t) => room.setTurnTimer(t, typeof ms === 'number' ? ms : null))(p, cb);
+    });
+    // 'I'm back': stop the bot playing for me. (comeBack broadcasts itself.)
+    socket.on('come_back', (_p: unknown, cb: unknown) => {
+      const room = currentRoom();
+      if (!room || !tokenSeated()) return ack(cb)({ error: 'Join a room first.' });
+      const err = room.comeBack(data.token!);
+      ack(cb)(err ? { error: err } : {});
+    });
 
     socket.on('action', (payload: unknown, cb: unknown) => {
       const room = currentRoom();

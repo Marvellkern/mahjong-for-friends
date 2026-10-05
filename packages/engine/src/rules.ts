@@ -21,6 +21,8 @@ export interface Rules {
   claimWindowMs: number;
   claimMinDelayMs: number;
   turnTimerMs: number | null;
+  turnTimerOptionsMs: readonly number[];
+  afkTimeoutsBeforeBot: number;
   fillEmptySeatsWithBots: boolean;
 }
 
@@ -50,8 +52,16 @@ export const RULES: Readonly<Rules> = {
   claimWindowMs: 10000,
   /** Minimum pause after every discard, even if nobody can claim, so timing doesn't leak who holds what. */
   claimMinDelayMs: 1200,
-  /** No turn timer by default (friends, no AFK kicks). A number = ms before your turn is auto-played (drawn tile discarded). */
+  /**
+   * No turn timer by default (friends, no AFK kicks). Online, the host can pick one of turnTimerOptionsMs
+   * in the lobby. When it runs out: complete hand -> Mahjong is declared for you; otherwise the tile you
+   * just drew is discarded (or, right after a claim, the least useful tile). Vs-bots mode never uses a timer.
+   */
   turnTimerMs: null,
+  /** The timer choices the host sees in the lobby (besides Off). */
+  turnTimerOptionsMs: [20000, 40000],
+  /** With a timer on: this many timeouts IN A ROW and a bot plays your seat until you tap "I'm back". */
+  afkTimeoutsBeforeBot: 2,
   /** Empty seats are filled with bots when a room starts. */
   fillEmptySeatsWithBots: true,
 };

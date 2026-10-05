@@ -56,7 +56,15 @@ Everything the reference video doesn't specify lives in **one object**, `RULES` 
 | `deadWall` | `false` | Kong replacements come from the end of the wall. `true` = the last 14 tiles are reserved. |
 | `claimWindowMs` | `10000` | Time to claim a discard. |
 | `claimMinDelayMs` | `1200` | Minimum pause after every online discard, so timing doesn't reveal who could claim. |
-| `turnTimerMs` | `null` | No turn timer. A number = your drawn tile is auto-discarded after that many ms. |
+| `turnTimerMs` | `null` | Default: no turn timer, the game waits. Online, the **host can pick a timer in the lobby**. Vs-bots mode never has one. |
+| `turnTimerOptionsMs` | `[20000, 40000]` | The timer choices in the lobby (besides Off). |
+| `afkTimeoutsBeforeBot` | `2` | Time out this many turns **in a row** and a bot plays your seat until you tap **I'm back** (or make a move). |
+
+**When your turn timer runs out**, the smallest possible move is made for you. If your hand is already complete, Mahjong
+is declared (you never lose a win to looking away). Otherwise the tile you just drew is discarded, so your hand stays as it was.
+Right after a Pung/Chow, the least useful tile is discarded. Kongs are never declared for you. The countdown only appears in
+the last 10 seconds. With a timer on, a disconnected player's turns also time out, so the game keeps going without them.
+Claim windows are unchanged: no answer within 10 s counts as Pass.
 | `fillEmptySeatsWithBots` | `true` | Empty seats become bots when the host starts. |
 
 Other choices made where the brief was silent (not flags, but listed so nothing is hidden):

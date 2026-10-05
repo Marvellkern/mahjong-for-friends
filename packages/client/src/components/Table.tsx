@@ -118,6 +118,15 @@ export function Table({ ctrl }: { ctrl: GameController }) {
           </div>
         </div>
 
+        {v.seats[me].away && ctrl.comeBack && (
+          <div role="alert" className="mx-1 mt-1.5 flex items-center gap-2 rounded-xl bg-black/35 px-3 py-2 text-[13px] ring-1 ring-gold/60">
+            <span className="flex-1 font-semibold">{S.awayBanner}</span>
+            <button className="min-h-9 shrink-0 rounded-lg bg-gold px-3 font-extrabold text-[#1d1d1d]" onClick={ctrl.comeBack}>
+              {S.imBack}
+            </button>
+          </div>
+        )}
+
         <p
           aria-live="polite"
           className={`mx-auto mt-1.5 w-fit max-w-full rounded-full px-3 py-1 text-center text-[13px] font-semibold sm:text-sm ${
@@ -139,7 +148,7 @@ export function Table({ ctrl }: { ctrl: GameController }) {
             onDiscard={(t) => act({ type: 'discard', tileId: t })}
           />
         </div>
-        <ActionBar actions={v.legalActions} selected={selected} claimDeadline={v.claimDeadline} onAct={act} />
+        <ActionBar actions={v.legalActions} selected={selected} claimDeadline={v.claimDeadline} turnDeadline={v.turnDeadline} onAct={act} />
       </footer>
 
       {ctrl.banner && (
@@ -314,6 +323,10 @@ function SeatCard({ view, seat, isTurn, className = '' }: { view: PlayerView; se
           <div className="flex items-center gap-1 text-[10px] leading-tight text-white/70">
             {!s.connected ? (
               <span className="rounded bg-man px-1 font-semibold text-white">{S.disconnected}</span>
+            ) : s.away ? (
+              <span className="rounded bg-white/15 px-1 font-semibold text-white" title={S.awayBanner}>
+                {S.awayTag}
+              </span>
             ) : isTurn ? (
               <span className="font-semibold text-gold">{s.isBot ? S.thinking : S.playing}</span>
             ) : (

@@ -16,6 +16,8 @@ export interface SeatInfo {
   name: string;
   isBot: boolean;
   connected: boolean;
+  /** A human who timed out twice in a row (or is away): a bot is playing their seat until they come back. */
+  away?: boolean;
 }
 
 export interface SeatView extends SeatInfo {
@@ -42,6 +44,8 @@ export interface PlayerView {
   lastDiscard?: { seat: number; tile: Tile };
   /** Epoch ms when the claim window closes (only while I can still claim). */
   claimDeadline?: number;
+  /** Epoch ms when my turn times out (only on my turn, only if the room has a turn timer). */
+  turnDeadline?: number;
   /** Kinds that would complete my hand (only if the hint is on and I'm one tile away). */
   waits?: Kind[];
   roundResult?: RoundResult & { hands?: Record<number, Tile[]> };
@@ -53,6 +57,8 @@ export interface ViewMeta {
   roomCode: string;
   seats: SeatInfo[];
   claimDeadline?: number;
+  /** When the CURRENT turn times out, if the room uses a turn timer. */
+  turnDeadline?: number;
   showWaits?: boolean;
 }
 
@@ -82,6 +88,7 @@ export function buildPlayerView(state: GameState, seat: number, meta: ViewMeta):
   if (drawn !== undefined) view.myDrawnTile = drawn;
   if (state.lastDiscard) view.lastDiscard = state.lastDiscard;
   if (state.phase === 'CLAIM_WINDOW' && legal.length > 0 && meta.claimDeadline) view.claimDeadline = meta.claimDeadline;
+  if (state.phase === 'AWAIT_DISCARD' && state.turn === seat && meta.turnDeadline) view.turnDeadline = meta.turnDeadline;
 
   // Ready-hand hint: only when my concealed hand is one tile short of complete (3n+1 tiles).
   if (meta.showWaits && state.phase !== 'ROUND_END' && me.hand.length % 3 === 1) {

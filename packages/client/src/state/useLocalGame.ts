@@ -34,7 +34,7 @@ const timing = (stepSince: number): Timing => ({
   botClaimMs: 200,
   claimMinDelayMs: 450,
   claimWindowMs: RULES.claimWindowMs,
-  turnTimerMs: RULES.turnTimerMs,
+  turnTimerMs: null, // vs bots: you are only waiting on yourself, so never a turn timer
 });
 
 const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];

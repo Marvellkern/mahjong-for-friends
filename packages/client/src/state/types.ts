@@ -18,4 +18,6 @@ export interface GameController {
   setShowWaits: (on: boolean) => void;
   connection: 'connected' | 'connecting' | 'reconnecting';
   leave: () => void;
+  /** "I'm back": take my seat back from the bot (online only). */
+  comeBack?: () => void;
 }

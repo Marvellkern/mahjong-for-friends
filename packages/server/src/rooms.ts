@@ -30,6 +30,10 @@ export interface Seat {
   token?: string;
   connected: boolean;
   showWaits: boolean;
+  /** Turn timeouts in a row (reset whenever the player acts). */
+  timeouts: number;
+  /** A bot is playing this human's seat until they tap "I'm back" (or make a move). */
+  away: boolean;
 }
 
 export type Listener = (room: Room, events: GameEvent[]) => void;
@@ -46,6 +50,8 @@ export class Room {
   /** When the current game step began (for claim/bot timers). */
   stepSince = Date.now();
   lastActivity = Date.now();
+  /** Turn timer chosen by the host in the lobby (null = off). */
+  turnTimerMs: number | null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private botRng: Rng;
 
@@ -59,6 +65,7 @@ export class Room {
     this.code = code;
     this.hostToken = hostToken;
     this.botRng = createRng(randomInt(2 ** 32));
+    this.turnTimerMs = timing.turnTimerMs;
   }
 
   get started() {
@@ -102,7 +109,7 @@ export class Room {
     if (this.started) return { error: 'That game has already started.' };
     const free = this.seats.findIndex((s) => s === null);
     if (free < 0) return { error: 'That room is full.' };
-    this.seats[free] = { kind: 'human', name: name || `Player ${free + 1}`, token, connected: true, showWaits: false };
+    this.seats[free] = { kind: 'human', name: name || `Player ${free + 1}`, token, connected: true, showWaits: false, timeouts: 0, away: false };
     // If the host left the lobby, the first human to arrive becomes host.
     if (this.hostSeat < 0) this.hostToken = token;
     return { seat: free, token };
@@ -133,7 +140,7 @@ export class Room {
     if (token !== this.hostToken) return 'Only the host can change seats.';
     if (this.started) return 'The game has already started.';
     if (!(seat >= 0 && seat < 4) || this.seats[seat] !== null) return 'That seat is taken.';
-    this.seats[seat] = { kind: 'bot', name: BOT_NAMES[seat], connected: true, showWaits: false };
+    this.seats[seat] = { kind: 'bot', name: BOT_NAMES[seat], connected: true, showWaits: false, timeouts: 0, away: false };
     return null;
   }
 
@@ -151,7 +158,7 @@ export class Room {
     for (let i = 0; i < 4; i++) {
       if (this.seats[i] !== null) continue;
       if (!this.rules.fillEmptySeatsWithBots) return 'Fill every seat (or add bots) first.';
-      this.seats[i] = { kind: 'bot', name: BOT_NAMES[i], connected: true, showWaits: false };
+      this.seats[i] = { kind: 'bot', name: BOT_NAMES[i], connected: true, showWaits: false, timeouts: 0, away: false };
     }
     const { state, events } = startRound(createGame({ seed: randomInt(2 ** 32), rules: this.rules }));
     this.commit(state, events);
@@ -166,7 +173,37 @@ export class Room {
     this.lastActivity = Date.now();
     const res = applyAction(this.game, seat, action);
     if ('error' in res) return res.error;
+    // Making a move yourself means you're here: clear the timeout streak and take your seat back.
+    const s = this.seats[seat]!;
+    s.timeouts = 0;
+    s.away = false;
     this.commit(res.state, res.events);
+    return null;
+  }
+
+  /** "I'm back": stop the bot playing for me. */
+  comeBack(token: string): string | null {
+    const seat = this.seatOf(token);
+    if (seat < 0) return "You're not seated in this room.";
+    const s = this.seats[seat]!;
+    s.timeouts = 0;
+    s.away = false;
+    this.lastActivity = Date.now();
+    this.onChange(this, []);
+    this.schedule(); // my turn (if it is) is mine to play again
+    return null;
+  }
+
+  get turnTimerOptions() {
+    return this.rules.turnTimerOptionsMs;
+  }
+
+  /** Host picks the turn timer in the lobby: null (off) or one of RULES.turnTimerOptionsMs. */
+  setTurnTimer(token: string, ms: number | null): string | null {
+    if (token !== this.hostToken) return 'Only the host can change the timer.';
+    if (this.started) return 'The game has already started.';
+    if (ms !== null && !this.rules.turnTimerOptionsMs.includes(ms)) return "That timer isn't an option.";
+    this.turnTimerMs = ms;
     return null;
   }
 
@@ -175,10 +212,17 @@ export class Room {
     if (seat >= 0) this.seats[seat]!.showWaits = on;
   }
 
-  isBot = (seat: number) => this.seats[seat]?.kind === 'bot';
+  /** Bots, plus humans a bot is currently playing for, are driven by the automatic-step timer. */
+  isBot = (seat: number) => this.seats[seat]?.kind === 'bot' || this.seats[seat]?.away === true;
 
   get claimDeadline() {
     return this.stepSince + this.timing.claimWindowMs;
+  }
+
+  /** When the current human turn times out (undefined if no timer, or a bot is playing that seat). */
+  get turnDeadline(): number | undefined {
+    if (this.turnTimerMs === null || this.game?.phase !== 'AWAIT_DISCARD' || this.isBot(this.game.turn)) return undefined;
+    return this.stepSince + this.turnTimerMs;
   }
 
   /** Store a new game state, notify listeners and re-arm the automatic-step timer. */
@@ -193,13 +237,19 @@ export class Room {
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     if (!this.game) return;
-    const step = planNextStep(this.game, this.isBot, { ...this.timing, stepSince: this.stepSince });
+    const step = planNextStep(this.game, this.isBot, { ...this.timing, turnTimerMs: this.turnTimerMs, stepSince: this.stepSince });
     if (!step) return;
     this.timer = setTimeout(
       () => {
         this.timer = null;
         if (!this.game) return;
         const res = runStep(this.game, step, this.botRng);
+        if (res && step.kind === 'turn_timeout') {
+          // Count timeouts in a row; after RULES.afkTimeoutsBeforeBot a bot takes over the seat.
+          const s = this.seats[step.seat]!;
+          s.timeouts += 1;
+          if (s.timeouts >= this.rules.afkTimeoutsBeforeBot) s.away = true;
+        }
         if (res) this.commit(res.state, res.events);
         else this.schedule();
       },

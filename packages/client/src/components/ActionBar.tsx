@@ -11,8 +11,13 @@ interface ActionBarProps {
   actions: Action[];
   selected: TileId | null;
   claimDeadline?: number;
+  /** When my turn times out (only if the room has a turn timer). */
+  turnDeadline?: number;
   onAct: (a: Action) => void;
 }
+
+/** The turn countdown only shows for the last 10 seconds, so it doesn't add stress the whole turn. */
+const TURN_WARNING_MS = 10_000;
 
 const btn =
   'min-h-11 rounded-xl px-4 py-2 text-base font-extrabold shadow-[0_3px_0_rgb(0_0_0/.3)] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-40';
@@ -20,7 +25,7 @@ const gold = `${btn} bg-gold text-[#1d1d1d]`;
 const light = `${btn} bg-tile text-[#1d1d1d]`;
 const ghost = `${btn} bg-black/30 text-white ring-1 ring-white/30`;
 
-export function ActionBar({ actions, selected, claimDeadline, onAct }: ActionBarProps) {
+export function ActionBar({ actions, selected, claimDeadline, turnDeadline, onAct }: ActionBarProps) {
   const win = actions.find((a) => a.type === 'declare_win' || (a.type === 'claim' && a.claim === 'win'));
   const kongs = actions.filter(
     (a) => (a.type === 'claim' && a.claim === 'kong') || a.type === 'concealed_kong' || a.type === 'added_kong',
@@ -34,6 +39,7 @@ export function ActionBar({ actions, selected, claimDeadline, onAct }: ActionBar
   return (
     <div className="flex min-h-14 flex-col items-center justify-center gap-1.5 py-1.5">
       {claimDeadline && pass && <Countdown key={claimDeadline} deadline={claimDeadline} />}
+      {turnDeadline && <TurnCountdown key={turnDeadline} deadline={turnDeadline} />}
       <div className="flex flex-wrap items-center justify-center gap-2">
         {win && (
           <button className={gold + ' px-6 text-lg'} onClick={() => onAct(win)}>
@@ -102,6 +108,35 @@ function Countdown({ deadline }: { deadline: number }) {
         />
       </div>
       <span className="w-6 tabular-nums">{S.secondsLeft(secs)}</span>
+    </div>
+  );
+}
+
+/**
+ * Turn timer: the slot is reserved for the whole turn (so nothing jumps), but the draining
+ * bar only appears in the last 10 seconds.
+ */
+function TurnCountdown({ deadline }: { deadline: number }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, []);
+  const left = deadline - now;
+  const show = left > 0 && left <= TURN_WARNING_MS;
+  return (
+    <div className="flex h-4 w-full max-w-xs items-center gap-2 text-xs font-semibold text-gold" role="timer" aria-live="off">
+      {show && (
+        <>
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/30">
+            <div
+              className="h-full rounded-full bg-gold transition-[width] duration-300 ease-linear"
+              style={{ width: `${(left / TURN_WARNING_MS) * 100}%` }}
+            />
+          </div>
+          <span className="w-6 tabular-nums">{S.secondsLeft(Math.ceil(left / 1000))}</span>
+        </>
+      )}
     </div>
   );
 }

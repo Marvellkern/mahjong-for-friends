@@ -12,6 +12,8 @@ export interface LobbySeat {
   name: string;
   isBot: boolean;
   connected: boolean;
+  /** A bot is playing this human's seat (they timed out too often). */
+  away: boolean;
 }
 
 export interface RoomSnapshot {
@@ -19,6 +21,10 @@ export interface RoomSnapshot {
   started: boolean;
   mySeat: number;
   hostSeat: number;
+  /** Turn timer the host picked (null = off). */
+  turnTimerMs: number | null;
+  /** Timer choices for the host's lobby picker (besides Off). */
+  turnTimerOptionsMs: readonly number[];
   seats: LobbySeat[];
   /** The game as seen from my seat (null while in the lobby). */
   view: PlayerView | null;
@@ -26,16 +32,28 @@ export interface RoomSnapshot {
 
 export function buildSnapshot(room: Room, seat: number): RoomSnapshot {
   const seats: LobbySeat[] = room.seats.map((s) =>
-    s ? { empty: false, name: s.name, isBot: s.kind === 'bot', connected: s.connected } : { empty: true, name: '', isBot: false, connected: false },
+    s
+      ? { empty: false, name: s.name, isBot: s.kind === 'bot', connected: s.connected, away: s.away }
+      : { empty: true, name: '', isBot: false, connected: false, away: false },
   );
   let view: PlayerView | null = null;
   if (room.game) {
     view = buildPlayerView(room.game, seat, {
       roomCode: room.code,
-      seats: seats.map(({ name, isBot, connected }) => ({ name, isBot, connected })),
+      seats: seats.map(({ name, isBot, connected, away }) => ({ name, isBot, connected, away })),
       claimDeadline: room.claimDeadline,
+      turnDeadline: room.turnDeadline,
       showWaits: room.seats[seat]?.showWaits ?? false,
     });
   }
-  return { code: room.code, started: room.started, mySeat: seat, hostSeat: room.hostSeat, seats, view };
+  return {
+    code: room.code,
+    started: room.started,
+    mySeat: seat,
+    hostSeat: room.hostSeat,
+    turnTimerMs: room.turnTimerMs,
+    turnTimerOptionsMs: room.turnTimerOptions,
+    seats,
+    view,
+  };
 }

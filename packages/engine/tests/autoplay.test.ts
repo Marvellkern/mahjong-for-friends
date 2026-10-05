@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { planNextStep, runStep, type Timing } from '../src/autoplay';
+import { planNextStep, runStep, timeoutAction, type Timing } from '../src/autoplay';
 import { createRng } from '../src/wall';
 import { buildPlayerView } from '../src/view';
 import { formatKinds } from '../src/notation';
 import { kindOf } from '../src/tiles';
-import { act, discardKind, setup } from './helpers';
+import { act, discardKind, resolve, setup } from './helpers';
 
 const T: Timing = { stepSince: 1000, botTurnMs: 500, botClaimMs: 300, claimMinDelayMs: 1200, claimWindowMs: 10000, turnTimerMs: null };
 const seats = [0, 1, 2, 3].map((i) => ({ name: `P${i}`, isBot: i !== 0, connected: true }));
@@ -67,5 +67,35 @@ describe('player view', () => {
     const won = act(s, 0, { type: 'declare_win' });
     const end = buildPlayerView(won, 1, { roomCode: 'X', seats });
     expect(end.roundResult!.hands![0].map(kindOf)).toHaveLength(14);
+  });
+});
+
+describe('turn timer runs out (timeoutAction)', () => {
+  const rng = () => createRng(7);
+
+  it('declares Mahjong for you if your hand is already complete', () => {
+    const s = setup({ hands: ['123m456m789m123p11z', '19p19s1234567z', '29m28p28s2345z6z', '369m258p258s1z56z'] });
+    expect(timeoutAction(s, 0, rng())).toEqual({ type: 'declare_win' });
+  });
+
+  it('otherwise discards the tile you just drew, leaving your hand as it was', () => {
+    const s = setup({ hands: ['123m456m789m123p1z7z', '19p19s1234567z', '29m28p28s2345z6z', '369m258p258s1z56z'] });
+    expect(timeoutAction(s, 0, rng())).toEqual({ type: 'discard', tileId: s.drawn });
+  });
+
+  it('right after a claim (nothing drawn) it discards a tile from your hand, and never declares a kong', () => {
+    let s = setup({ hands: ['5m' + '1239p123456789s', '19p19s1234567z', '55m' + '5m' + '123456p23z', '369m258p258s1z67z'] });
+    s = discardKind(s, 0, '5m');
+    s = act(s, 2, { type: 'claim', claim: 'pung' });
+    s = resolve(s);
+    expect(s.drawn).toBeNull();
+    const a = timeoutAction(s, 2, rng())!;
+    expect(a.type).toBe('discard');
+    expect(s.players[2].hand).toContain((a as { tileId: number }).tileId);
+  });
+
+  it('does nothing when it is not your turn', () => {
+    const s = setup({ hands: ['123m456m789m123p1z7z', '19p19s1234567z', '29m28p28s2345z6z', '369m258p258s1z56z'] });
+    expect(timeoutAction(s, 1, rng())).toBeNull();
   });
 });

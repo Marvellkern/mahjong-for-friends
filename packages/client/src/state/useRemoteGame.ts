@@ -19,12 +19,15 @@ export interface LobbySeat {
   name: string;
   isBot: boolean;
   connected: boolean;
+  away: boolean;
 }
 export interface RoomSnapshot {
   code: string;
   started: boolean;
   mySeat: number;
   hostSeat: number;
+  turnTimerMs: number | null;
+  turnTimerOptionsMs: readonly number[];
   seats: LobbySeat[];
   view: PlayerView | null;
 }
@@ -98,6 +101,7 @@ export interface RemoteRoom {
   addBot: (seat: number) => void;
   removeBot: (seat: number) => void;
   start: () => void;
+  setTurnTimer: (ms: number | null) => void;
   leave: () => void;
   controller: GameController | null;
 }
@@ -200,13 +204,14 @@ export function useRemoteGame(
   );
 
   const act = useCallback((a: Action) => send('action', a), [send]);
+  const comeBack = useCallback(() => send('come_back'), [send]);
 
   const controller = useMemo<GameController | null>(
     () =>
       snapshot?.view
-        ? { mode: 'remote', view: snapshot.view, act, error, banner, showWaits, setShowWaits, connection, leave }
+        ? { mode: 'remote', view: snapshot.view, act, error, banner, showWaits, setShowWaits, connection, leave, comeBack }
         : null,
-    [snapshot, act, error, banner, showWaits, setShowWaits, connection, leave],
+    [snapshot, act, error, banner, showWaits, setShowWaits, connection, leave, comeBack],
   );
 
   return {
@@ -217,6 +222,7 @@ export function useRemoteGame(
     addBot: (seat) => send('add_bot', { seat }),
     removeBot: (seat) => send('remove_bot', { seat }),
     start: () => send('start_game'),
+    setTurnTimer: (ms) => send('set_turn_timer', { ms }),
     leave,
     controller,
   };

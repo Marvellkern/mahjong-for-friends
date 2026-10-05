@@ -218,6 +218,8 @@ export function LobbyRoom({ room }: { room: RemoteRoom }) {
         ))}
       </ul>
 
+      <TimerPicker room={room} isHost={isHost} />
+
       {isHost ? (
         <>
           <button className={primaryBtn} onClick={room.start}>
@@ -234,6 +236,39 @@ export function LobbyRoom({ room }: { room: RemoteRoom }) {
           {room.error}
         </p>
       )}
+    </div>
+  );
+}
+
+/** Turn timer: the host picks Off / 20s / 40s; everyone else sees the choice. */
+function TimerPicker({ room, isHost }: { room: RemoteRoom; isHost: boolean }) {
+  const snap = room.snapshot!;
+  const options: (number | null)[] = [null, ...snap.turnTimerOptionsMs];
+  return (
+    <div className="card rounded-2xl p-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-semibold">{S.turnTimer}</span>
+        <div role="radiogroup" aria-label={S.turnTimer} className="flex rounded-xl bg-black/30 p-0.5">
+          {options.map((ms) => {
+            const on = snap.turnTimerMs === ms;
+            return (
+              <button
+                key={String(ms)}
+                role="radio"
+                aria-checked={on}
+                disabled={!isHost}
+                onClick={() => room.setTurnTimer(ms)}
+                className={`min-h-9 min-w-12 rounded-lg px-2.5 text-sm font-bold ${
+                  on ? 'bg-gold text-[#1d1d1d]' : 'text-white/80 enabled:hover:bg-white/10'
+                } disabled:cursor-default`}
+              >
+                {ms === null ? S.timerOff : S.timerSeconds(ms)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <p className="mt-2 text-xs leading-snug text-white/70">{snap.turnTimerMs === null ? S.timerNone : S.timerExplainer}</p>
     </div>
   );
 }
